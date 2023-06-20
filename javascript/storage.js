@@ -19,10 +19,10 @@ const triggerElementId = 'range_id_0'
 
 function delay(ms){return new Promise(resolve => setTimeout(resolve, ms))}
 
-function saveToStorage(storageKey) {
+function keyupListener(storageKey) {
   return function(e) {
-    const element = e.target
-    localStorage.setItem(storageKey, element.value)
+    const target = e.target
+    localStorage.setItem(storageKey, target.value)
   }
 }
 
@@ -31,52 +31,52 @@ async function restoreFromStorage(storageKey, ...elements) {
   if(storedItem) {
     for(const element of elements) {
       element.value = storedItem
+      updateInput(element)
     }
   }
 }
 
-async function fire(){ 
+async function onGradioAppLoaded(){ 
+  // Wait for app to fully load
   await delay(100);
   while (!gradioApp().getElementById(triggerElementId)) {
     await delay(200)
   }
 
-  //specify what you want to do once the while loop breaks, you might not even need the delay, but it reduces load
-  //to have some time out
-  const txt2imgGenerateButton = document.querySelector(txt2imgGenerateQuery)
-  const samplingMethodInput = document.querySelector(samplingMethodQuery)
-  const promptInput = document.querySelector(promptQuery)
-  const negativePromptInput = document.querySelector(negativePromptQuery)
-  const samplingStepsRangeInput = document.querySelector(samplingStepsRangeQuery)
-  const samplingStepsTextInput = document.querySelector(samplingStepsTextQuery)
-  const widthRangeInput = document.querySelector(widthRangeQuery)
-  const widthTextInput = document.querySelector(widthTextQuery)
-  const heightRangeInput = document.querySelector(heightRangeQuery)
-  const heightTextInput = document.querySelector(heightTextQuery)
-  const batchCountInput = document.querySelector(batchCountQuery)
-  const batchSizeInput = document.querySelector(batchCountQuery)
-  const cfgScaleRangeInput = document.querySelector(cfgScaleRangeQuery)
-  const cfgScaleTextInput = document.querySelector(cfgScaleTextQuery)
-  const seedInput = document.querySelector(seedQuery) 
+  const samplingMethodInput = gradioApp().querySelector(samplingMethodQuery)
+  const promptInput = gradioApp().querySelector(promptQuery)
+  const negativePromptInput = gradioApp().querySelector(negativePromptQuery)
+  const samplingStepsRangeInput = gradioApp().querySelector(samplingStepsRangeQuery)
+  const samplingStepsTextInput = gradioApp().querySelector(samplingStepsTextQuery)
+  const widthRangeInput = gradioApp().querySelector(widthRangeQuery)
+  const widthTextInput = gradioApp().querySelector(widthTextQuery)
+  const heightRangeInput = gradioApp().querySelector(heightRangeQuery)
+  const heightTextInput = gradioApp().querySelector(heightTextQuery)
+  const batchCountInput = gradioApp().querySelector(batchCountQuery)
+  const batchSizeInput = gradioApp().querySelector(batchCountQuery)
+  const cfgScaleRangeInput = gradioApp().querySelector(cfgScaleRangeQuery)
+  const cfgScaleTextInput = gradioApp().querySelector(cfgScaleTextQuery)
+  const seedInput = gradioApp().querySelector(seedQuery) 
 
-  // Register event listeners to save inputs to localStorage
-  samplingMethodInput.addEventListener('change', saveToStorage('sampling_method'))
-  promptInput.addEventListener('change', saveToStorage('prompt'))
-  negativePromptInput.addEventListener('change', saveToStorage('negative_prompt'))
-  samplingStepsRangeInput.addEventListener('change', saveToStorage('sampling_steps'))
-  samplingStepsTextInput.addEventListener('change', saveToStorage('sampling_steps'))
-  widthRangeInput.addEventListener('change', saveToStorage('width'))
-  widthTextInput.addEventListener('change', saveToStorage('width'))
-  heightRangeInput.addEventListener('change', saveToStorage('height'))
-  heightTextInput.addEventListener('change', saveToStorage('height'))
-  batchCountInput.addEventListener('change', saveToStorage('batch_count'))
-  batchSizeInput.addEventListener('change', saveToStorage('batch_size'))
-  cfgScaleRangeInput.addEventListener('change', saveToStorage('cfg_scale'))
-  cfgScaleTextInput.addEventListener('change', saveToStorage('cfg_scale'))
-  seedInput.addEventListener('change', saveToStorage('seed'))
+  // Register event listeners to save inputs to localStorage.
+  // Don't use 'input' listener because gradio uses that to update input changes internally.
+  // TLDR; Using 'input' listener causes infinite recursion
+  samplingMethodInput.addEventListener('keyup', keyupListener('sampling_method'))
+  promptInput.addEventListener('keyup', keyupListener('prompt'))
+  negativePromptInput.addEventListener('keyup', keyupListener('negative_prompt'))
+  samplingStepsRangeInput.addEventListener('keyup', keyupListener('sampling_steps'))
+  samplingStepsTextInput.addEventListener('keyup', keyupListener('sampling_steps'))
+  widthRangeInput.addEventListener('keyup', keyupListener('width'))
+  widthTextInput.addEventListener('keyup', keyupListener('width'))
+  heightRangeInput.addEventListener('keyup', keyupListener('height'))
+  heightTextInput.addEventListener('keyup', keyupListener('height'))
+  batchCountInput.addEventListener('keyup', keyupListener('batch_count'))
+  batchSizeInput.addEventListener('keyup', keyupListener('batch_size'))
+  cfgScaleRangeInput.addEventListener('keyup', keyupListener('cfg_scale'))
+  cfgScaleTextInput.addEventListener('keyup', keyupListener('cfg_scale'))
+  seedInput.addEventListener('keyup', keyupListener('seed'))
 
   // Restore from local storage
-  restoreFromStorage('sampling_method', samplingMethodInput)
   restoreFromStorage('prompt', promptInput)
   restoreFromStorage('negative_prompt', negativePromptInput)
   restoreFromStorage('sampling_steps', samplingStepsRangeInput, samplingStepsTextInput)
@@ -86,9 +86,15 @@ async function fire(){
   restoreFromStorage('batch_size', batchSizeInput)
   restoreFromStorage('cfg_scale', cfgScaleRangeInput, cfgScaleTextInput)
   restoreFromStorage('seed', seedInput)
+  
+  // Currently pointless to restore sampling_method.
+  // Dropdowns created by gradio use <ul> and 'click' event does not
+  // help to select it programatically.
+
+  // restoreFromStorage('sampling_method', samplingMethodInput)
 
   // Add extra buttons
-  const buttonContainer = document.querySelector('#image_buttons_txt2img')
+  const buttonContainer = gradioApp().querySelector('#image_buttons_txt2img')
 
   // Clear localStorage
   const buttonClasses = 'lg secondary gradio-button svelte-1ipelgc'
@@ -111,4 +117,4 @@ async function fire(){
   buttonContainer.appendChild(button)
 }
 
-document.addEventListener("DOMContentLoaded", async function() {await fire()})
+document.addEventListener("DOMContentLoaded", async function() {await onGradioAppLoaded()})
